@@ -1,21 +1,21 @@
 import { useEffect, useState, useRef } from 'react'
 import {
   View, Text, StyleSheet, ActivityIndicator,
-  TouchableOpacity, ScrollView, Dimensions
+  TouchableOpacity
 } from 'react-native'
-import MapView, { Marker, Circle } from 'react-native-maps'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import MapView, { Marker } from 'react-native-maps'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import BusynessBar from './BusynessBar'
+import LocationDetailSheet from './LocationDetailSheet'
 import {
   BUSYNESS_COLOR_LOW,
   BUSYNESS_COLOR_MEDIUM,
   BUSYNESS_COLOR_HIGH
 } from '../components/config'
+import { PanResponder, Animated } from 'react-native'
+import { useTheme } from '../lib/ThemeContext'
 
-const { height } = Dimensions.get('window')
-
-// University of Washington default center
 const UW_REGION = {
   latitude: 47.6553,
   longitude: -122.3035,
@@ -32,12 +32,43 @@ function getPinColor(label) {
   }
 }
 
+function Tag({ label }) {
+  return (
+    <View style={styles.tag}>
+      <Text style={styles.tagText}>{label}</Text>
+    </View>
+  )
+}
+
 export default function MapView2() {
   const [locations, setLocations] = useState([])
   const [busynessMap, setBusynessMap] = useState({})
   const [selectedLocation, setSelectedLocation] = useState(null)
+  const [showDetail, setShowDetail] = useState(false)
   const [loading, setLoading] = useState(true)
   const mapRef = useRef(null)
+  const slideAnim = useRef(new Animated.Value(0)).current
+  const { primaryColor } = useTheme()
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy < -10,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy < -50) {
+          setShowDetail(true)
+        }
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true
+        }).start()
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy < 0) {
+          slideAnim.setValue(gestureState.dy)
+        }
+      }
+    })
+  ).current
 
   useEffect(() => {
     fetchLocations()
@@ -71,7 +102,7 @@ export default function MapView2() {
 
   function handlePinPress(location) {
     setSelectedLocation(location)
-    // Animate map to center slightly above the pin to make room for the card
+    setShowDetail(false)
     mapRef.current?.animateToRegion({
       latitude: location.lat - 0.002,
       longitude: location.lng,
@@ -83,13 +114,12 @@ export default function MapView2() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B9E6B" />
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     )
   }
 
-  const selected = selectedLocation
-  const busyness = selected ? busynessMap[selected.id] : null
+  const busyness = selectedLocation ? busynessMap[selectedLocation.id] : null
 
   return (
     <View style={styles.container}>
@@ -109,10 +139,16 @@ export default function MapView2() {
               coordinate={{ latitude: loc.lat, longitude: loc.lng }}
               onPress={() => handlePinPress(loc)}
             >
-              {/* Custom pin */}
-              <View style={[styles.pin, loc.type === 'both' && styles.pinWide, { backgroundColor: pinColor }]}>
-                <Text style={[styles.pinEmoji, loc.type === 'both' && styles.pinEmojiSmall]}>
-                    {loc.type === 'study' ? '📚' : loc.type === 'food' ? '🍔' : '📚🍔'}
+              <View style={[
+                styles.pin,
+                loc.type === 'both' && styles.pinWide,
+                { backgroundColor: pinColor }
+              ]}>
+                <Text style={[
+                  styles.pinEmoji,
+                  loc.type === 'both' && styles.pinEmojiSmall
+                ]}>
+                  {loc.type === 'study' ? '📚' : loc.type === 'food' ? '🍔' : '📚🍔'}
                 </Text>
               </View>
             </Marker>
@@ -120,19 +156,30 @@ export default function MapView2() {
         })}
       </MapView>
 
-      {/* Dismiss tap area when card is open */}
+      {/* Dismiss overlay */}
       {selectedLocation && (
         <TouchableOpacity
           style={styles.dismissOverlay}
-          onPress={() => setSelectedLocation(null)}
+          onPress={() => {
+            setSelectedLocation(null)
+            setShowDetail(false)
+          }}
           activeOpacity={1}
         />
       )}
 
-      {/* Bottom location card */}
+      {/* Bottom card — now Animated.View with swipe */}
       {selectedLocation && (
-        <View style={styles.bottomCard}>
-          <View style={styles.cardHandle} />
+        <Animated.View
+          style={[
+            styles.bottomCard,
+            { transform: [{ translateY: slideAnim }] }
+          ]}
+        >
+          {/* Handle area — swipe up to open full details */}
+          <View {...panResponder.panHandlers} style={styles.handleArea}>
+            <View style={styles.cardHandle} />
+          </View>
 
           <View style={styles.cardHeader}>
             <View style={{ flex: 1 }}>
@@ -142,7 +189,10 @@ export default function MapView2() {
                  selectedLocation.type === 'food' ? '🍔 Food spot' : '📚🍔 Study & Food'}
               </Text>
             </View>
-            <TouchableOpacity onPress={() => setSelectedLocation(null)}>
+            <TouchableOpacity onPress={() => {
+              setSelectedLocation(null)
+              setShowDetail(false)
+            }}>
               <Text style={styles.closeBtn}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -152,31 +202,31 @@ export default function MapView2() {
             label={busyness?.label ?? 'no_data'}
           />
 
-          {/* Attribute tags */}
           <View style={styles.tags}>
-            {selectedLocation.attributes?.wifi &&
-              <Tag label="WiFi" />}
-            {selectedLocation.attributes?.outlets &&
-              <Tag label="Outlets" />}
-            {selectedLocation.attributes?.open_late &&
-              <Tag label="Open Late" />}
-            {selectedLocation.attributes?.noise_level &&
-              <Tag label={selectedLocation.attributes.noise_level} />}
-            {selectedLocation.attributes?.accepts_dining_dollars &&
-              <Tag label="Dining $" />}
-            {selectedLocation.attributes?.outdoor_seating &&
-              <Tag label="Outdoor" />}
+            {selectedLocation.attributes?.wifi && <Tag label="WiFi" />}
+            {selectedLocation.attributes?.outlets && <Tag label="Outlets" />}
+            {selectedLocation.attributes?.open_late && <Tag label="Open Late" />}
+            {selectedLocation.attributes?.noise_level && <Tag label={selectedLocation.attributes.noise_level} />}
+            {selectedLocation.attributes?.accepts_dining_dollars && <Tag label="Dining $" />}
+            {selectedLocation.attributes?.outdoor_seating && <Tag label="Outdoor" />}
           </View>
-        </View>
-      )}
-    </View>
-  )
-}
 
-function Tag({ label }) {
-  return (
-    <View style={styles.tag}>
-      <Text style={styles.tagText}>{label}</Text>
+          <TouchableOpacity
+            style={styles.moreInfoBtn}
+            onPress={() => setShowDetail(true)}
+          >
+            <Text style={[styles.moreInfoText, { color: primaryColor }]}>View Full Details</Text>
+            <Ionicons name="chevron-up" size={14} color={primaryColor} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
+      {/* Detail sheet — sibling to map, outside bottomCard */}
+      <LocationDetailSheet
+        location={selectedLocation}
+        visible={showDetail}
+        onClose={() => setShowDetail(false)}
+      />
     </View>
   )
 }
@@ -201,8 +251,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4
   },
+  pinWide: {
+    width: 48,
+    borderRadius: 24,
+  },
   pinEmoji: {
     fontSize: 16
+  },
+  pinEmojiSmall: {
+    fontSize: 13
   },
   dismissOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -264,12 +321,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4
   },
-  pinWide: {
-  width: 48,
-  borderRadius: 24,
- },
-pinEmojiSmall: {
-  fontSize: 13
- },
-  tagText: { fontSize: 11, color: '#666' }
+  tagText: { fontSize: 11, color: '#666' },
+  moreInfoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#f0faf5'
+  },
+  handleArea: {
+  paddingVertical: 8,
+  alignItems: 'center',
+  marginBottom: 8
+  },
+  moreInfoText: {
+    fontSize: 14,
+    fontWeight: '600'
+  }
 })

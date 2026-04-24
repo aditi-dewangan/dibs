@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
-export default function SearchScreen() {
+export default function FavoritesScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Search & Filter</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.text}>Favorites coming soon</Text>
+    </SafeAreaView>
   )
 }
 

@@ -49,26 +49,21 @@ export default function SignupScreen({ onNavigateLogin }) {
     setLoading(true)
 
     // 1. Create the auth user
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: displayName,
+          university_id: selectedUniversity
+        }
+      }
+    })
 
     if (error) {
       Alert.alert('Signup failed', error.message)
       setLoading(false)
       return
-    }
-
-    // 2. Update the profile row the trigger created with their name + university
-    // The trigger already inserted the row — we just need to fill in the rest
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .update({
-        display_name: displayName,
-        university_id: selectedUniversity
-      })
-      .eq('id', data.user.id)
-
-    if (profileError) {
-      Alert.alert('Profile setup failed', profileError.message)
     }
 
     setLoading(false)

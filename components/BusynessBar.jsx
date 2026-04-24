@@ -5,6 +5,7 @@ import {
   BUSYNESS_COLOR_HIGH
 } from '../components/config'
 
+
 function getSegmentColor(position, score) {
   if (position > score) return '#f0f0f0'
   if (position <= 3) return BUSYNESS_COLOR_LOW

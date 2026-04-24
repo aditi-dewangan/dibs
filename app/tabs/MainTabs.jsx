@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { NavigationContainer } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import ExploreScreen from './ExploreScreen'
-import SearchScreen from './SearchScreen'
+import FavoritesScreen from './FavoritesScreen'
 import ProfileScreen from './ProfileScreen'
 
 const Tab = createBottomTabNavigator()
@@ -26,8 +26,8 @@ export default function MainTabs() {
             let iconName
             if (route.name === 'Explore') {
               iconName = focused ? 'compass' : 'compass-outline'
-            } else if (route.name === 'Search') {
-              iconName = focused ? 'search' : 'search-outline'
+            } else if (route.name === 'Favorites') {
+              iconName = focused ? 'heart' : 'heart-outline'
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline'
             }
@@ -36,7 +36,7 @@ export default function MainTabs() {
         })}
       >
         <Tab.Screen name="Explore" component={ExploreScreen} />
-        <Tab.Screen name="Search" component={SearchScreen} />
+        <Tab.Screen name="Favorites" component={FavoritesScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
     </NavigationContainer>
