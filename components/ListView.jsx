@@ -7,7 +7,12 @@ import { supabase } from '../lib/supabase'
 import LocationCard from './LocationCard'
 import { useTheme } from '../lib/ThemeContext'
 
-export default function ListView({ typeFilter = 'all', activeAttrs = [], attrMatch = {} }) {
+export default function ListView({
+  typeFilter = 'all',
+  activeAttrs = [],
+  attrMatch = {},
+  searchQuery = ''
+  }) {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const { primaryColor } = useTheme()
@@ -40,11 +45,21 @@ export default function ListView({ typeFilter = 'all', activeAttrs = [], attrMat
       )
     : locations
 
+  const searched = searchQuery.trim().length > 0
+  ? filtered.filter(loc => {
+      const q = searchQuery.toLowerCase()
+      return (
+        loc.name?.toLowerCase().includes(q) ||
+        loc.description?.toLowerCase().includes(q)
+      )
+    })
+  : filtered
+
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} color={primaryColor} />
 
   return (
     <ScrollView contentContainerStyle={styles.list}>
-      {filtered.map((loc) => (
+      {searched.map((loc) => (
         <LocationCard key={loc.id} location={loc} />
       ))}
     </ScrollView>

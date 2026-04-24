@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import {
-  View, Text, TouchableOpacity, StyleSheet
-} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import ListView from '../../components/ListView'
 import MapView2 from '../../components/MapView2'
 import FilterModal from '../../components/FilterModal'
 import { useTheme } from '../../lib/ThemeContext'
+import {View, Text, TouchableOpacity, StyleSheet, TextInput} from 'react-native'
+
 
 const ATTRIBUTE_MATCH = {
   wifi:     (a) => a.wifi === true,
@@ -23,6 +22,7 @@ export default function ExploreScreen() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [activeAttrs, setActiveAttrs] = useState([])
   const { primaryColor } = useTheme()
+  const [searchQuery, setSearchQuery] = useState('')
 
   function toggleAttr(key) {
     setActiveAttrs(prev =>
@@ -42,26 +42,19 @@ export default function ExploreScreen() {
     <SafeAreaView style={styles.container}>
 
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: primaryColor }]}>
-        <Text style={[styles.appName, { color: primaryColor }]}>Dibs</Text>
+      <View style={[styles.header, { backgroundColor: primaryColor }]}>
+        <Text style={styles.appName}>Dibs</Text>
         <View style={styles.headerRight}>
-
-          {/* Filter button */}
           <TouchableOpacity
-            style={[styles.filterBtn, hasFilters && { backgroundColor: primaryColor }]}
+            style={[styles.filterBtn, hasFilters && styles.filterBtnActive]}
             onPress={() => setShowFilter(true)}
           >
-            <Ionicons
-              name="options-outline"
-              size={16}
-              color={hasFilters ? '#fff' : '#555'}
-            />
+            <Ionicons name="options-outline" size={16} color={hasFilters ? primaryColor : '#fff'} />
             {activeFilterCount > 0 && (
-              <Text style={styles.filterCount}>{activeFilterCount}</Text>
+              <Text style={[styles.filterCount, { color: primaryColor }]}>{activeFilterCount}</Text>
             )}
           </TouchableOpacity>
 
-          {/* List/Map toggle */}
           <View style={styles.toggle}>
             <TouchableOpacity
               style={[styles.toggleBtn, activeView === 'list' && styles.toggleActive]}
@@ -82,11 +75,28 @@ export default function ExploreScreen() {
           </View>
         </View>
       </View>
+      {activeView === 'list' && (
+        <View style={styles.searchWrapper}>
+          <Ionicons name="search-outline" size={16} color="#999" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search spots..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      )}
 
       {/* Content */}
       {activeView === 'list'
-        ? <ListView typeFilter={typeFilter} activeAttrs={activeAttrs} attrMatch={ATTRIBUTE_MATCH} />
-        : <MapView2 typeFilter={typeFilter} activeAttrs={activeAttrs} attrMatch={ATTRIBUTE_MATCH} />
+        ? <ListView
+            typeFilter={typeFilter}
+            activeAttrs={activeAttrs}
+            attrMatch={ATTRIBUTE_MATCH}
+            searchQuery={searchQuery}
+          />
+        : <MapView2 />
       }
 
       {/* Filter Modal */}
@@ -107,15 +117,17 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 20,
+  paddingVertical: 12,
   },
-  appName: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
+  appName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff'
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -128,16 +140,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#f2f2f2'
+    backgroundColor: 'rgba(255,255,255,0.2)'
+  },
+  filterBtnActive: {
+    backgroundColor: '#fff'
   },
   filterCount: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#fff'
   },
   toggle: {
     flexDirection: 'row',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
     padding: 3
   },
@@ -148,12 +162,30 @@ const styles = StyleSheet.create({
   },
   toggleActive: {
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2
   },
-  toggleText: { fontSize: 14, color: '#999', fontWeight: '500' },
-  toggleTextActive: { color: '#1a1a1a', fontWeight: '600' }
+  toggleText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500'
+  },
+  toggleTextActive: {
+    fontWeight: '600',
+    color: '#1a1a1a'
+  },
+  searchWrapper: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  marginHorizontal: 16,
+  marginVertical: 12,
+  paddingHorizontal: 14,
+  paddingVertical: 10,
+  borderRadius: 14,
+  backgroundColor: '#f2f2f2'
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1a1a1a'
+  }
 })

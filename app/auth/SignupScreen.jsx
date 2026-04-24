@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, KeyboardAvoidingView,
-  Platform, ScrollView
+  Platform, ScrollView, Modal, Pressable
 } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../lib/supabase'
+import { useTheme } from '../../lib/ThemeContext'
+import { TERMS_TEXT } from '../../lib/terms'
 
 export default function SignupScreen({ onNavigateLogin }) {
   const [email, setEmail] = useState('')
@@ -13,25 +16,26 @@ export default function SignupScreen({ onNavigateLogin }) {
   const [displayName, setDisplayName] = useState('')
   const [universities, setUniversities] = useState([])
   const [selectedUniversity, setSelectedUniversity] = useState(null)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
   const [loading, setLoading] = useState(false)
+  const { primaryColor } = useTheme()
 
-  // Load universities for the dropdown on mount
   useEffect(() => {
     async function loadUniversities() {
-        const { data, error } = await supabase
-            .from('universities')
-            .select('id, name')
-            .eq('is_active', true)
-            .order('name')
+      const { data, error } = await supabase
+        .from('universities')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name')
 
-        // ADD THESE TWO LINES
-        console.log('universities data:', JSON.stringify(data))
-        console.log('universities error:', JSON.stringify(error))
+      console.log('universities data:', JSON.stringify(data))
+      console.log('universities error:', JSON.stringify(error))
 
-        if (!error) {
-            setUniversities(data)
-            if (data.length > 0) setSelectedUniversity(data[0].id)
-        }
+      if (!error) {
+        setUniversities(data)
+        if (data.length > 0) setSelectedUniversity(data[0].id)
+      }
     }
     loadUniversities()
   }, [])
@@ -41,21 +45,28 @@ export default function SignupScreen({ onNavigateLogin }) {
       Alert.alert('Missing fields', 'Please fill out all fields.')
       return
     }
+
     if (password.length < 6) {
       Alert.alert('Weak password', 'Password must be at least 6 characters.')
       return
     }
 
+    if (!acceptedTerms) {
+      Alert.alert('Terms required', 'Please accept the Terms & Conditions to sign up.')
+      return
+    }
+
     setLoading(true)
 
-    // 1. Create the auth user
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: displayName,
-          university_id: selectedUniversity
+          university_id: selectedUniversity,
+          accepted_terms: true,
+          accepted_terms_at: new Date().toISOString()
         }
       }
     })
@@ -67,7 +78,6 @@ export default function SignupScreen({ onNavigateLogin }) {
     }
 
     setLoading(false)
-    // AuthGate handles redirect automatically on session creation
   }
 
   return (
@@ -119,9 +129,27 @@ export default function SignupScreen({ onNavigateLogin }) {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={styles.termsRow}
+          onPress={() => setAcceptedTerms(!acceptedTerms)}
+        >
+          <View style={[styles.checkbox, acceptedTerms && styles.checkboxActive]}>
+            {acceptedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
+          </View>
+          <Text style={styles.termsText}>
+            I agree to the{' '}
+            <Text style={{ color: '#3B9E6B' }} onPress={() => setShowTerms(true)}>
+              Terms & Conditions
+            </Text>
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            (loading || !acceptedTerms) && styles.buttonDisabled
+          ]}
           onPress={handleSignup}
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
         >
           <Text style={styles.buttonText}>
             {loading ? 'Creating account...' : 'Create account'}
@@ -131,6 +159,31 @@ export default function SignupScreen({ onNavigateLogin }) {
         <TouchableOpacity onPress={onNavigateLogin} style={styles.link}>
           <Text style={styles.linkText}>Already have an account? Sign in</Text>
         </TouchableOpacity>
+        <Modal
+          visible={showTerms}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowTerms(false)}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowTerms(false)} />
+
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Terms & Conditions</Text>
+
+            <ScrollView style={{ maxHeight: 300 }}>
+              <Text style={styles.termsBody}>
+                {TERMS_TEXT}
+              </Text>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.closeTermsBtn}
+              onPress={() => setShowTerms(false)}
+            >
+              <Text style={styles.closeTermsText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -176,6 +229,30 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: 'hidden'
   },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  checkboxActive: {
+    backgroundColor: '#3B9E6B',
+    borderColor: '#3B9E6B'
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#555'
+  },
   button: {
     backgroundColor: '#3B9E6B',
     borderRadius: 10,
@@ -198,5 +275,36 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#3B9E6B',
     fontSize: 14
+  },
+  modalBackdrop: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.3)'
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12
+  },
+  termsBody: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 20
+  },
+  closeTermsBtn: {
+    marginTop: 16,
+    backgroundColor: '#3B9E6B',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  closeTermsText: {
+    color: '#fff',
+    fontWeight: '600'
   }
 })

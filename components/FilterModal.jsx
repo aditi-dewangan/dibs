@@ -29,7 +29,7 @@ export default function FilterModal({
   onClear
 }) {
   const hasFilters = typeFilter !== 'all' || activeAttrs.length > 0
-  const { primaryColor } = useTheme()
+  const { primaryColor, secondaryColor } = useTheme()
 
   return (
     <Modal
@@ -86,7 +86,7 @@ export default function FilterModal({
                     styles.attrPill,
                     active && {
                       borderColor: primaryColor,
-                      backgroundColor: '#f0faf5'
+                      backgroundColor: secondaryColor
                     }
                   ]}
                   onPress={() => toggleAttr(f.key)}

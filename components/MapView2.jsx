@@ -48,7 +48,7 @@ export default function MapView2() {
   const [loading, setLoading] = useState(true)
   const mapRef = useRef(null)
   const slideAnim = useRef(new Animated.Value(0)).current
-  const { primaryColor } = useTheme()
+  const { primaryColor, secondaryColor } = useTheme()
 
   const panResponder = useRef(
     PanResponder.create({
@@ -212,7 +212,7 @@ export default function MapView2() {
           </View>
 
           <TouchableOpacity
-            style={styles.moreInfoBtn}
+            style={[styles.moreInfoBtn, { backgroundColor: secondaryColor }]}
             onPress={() => setShowDetail(true)}
           >
             <Text style={[styles.moreInfoText, { color: primaryColor }]}>View Full Details</Text>
@@ -330,7 +330,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#f0faf5'
   },
   handleArea: {
   paddingVertical: 8,

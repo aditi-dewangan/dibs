@@ -4,23 +4,30 @@ import { Ionicons } from '@expo/vector-icons'
 import ExploreScreen from './ExploreScreen'
 import FavoritesScreen from './FavoritesScreen'
 import ProfileScreen from './ProfileScreen'
+import { useTheme } from '../../lib/ThemeContext'
 
 const Tab = createBottomTabNavigator()
 
 export default function MainTabs() {
+  const { primaryColor } = useTheme()
+
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarActiveTintColor: '#3B9E6B',
-          tabBarInactiveTintColor: '#999',
+          tabBarActiveTintColor: '#fff',
+          tabBarInactiveTintColor: 'rgba(255,255,255,0.5)',
           tabBarStyle: {
-            backgroundColor: '#fff',
-            borderTopColor: '#f0f0f0',
+            backgroundColor: primaryColor,
+            borderTopWidth: 0,
             paddingBottom: 8,
             paddingTop: 6,
             height: 60
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600'
           },
           tabBarIcon: ({ focused, color, size }) => {
             let iconName
