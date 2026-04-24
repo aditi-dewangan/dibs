@@ -121,7 +121,9 @@ export default function SignupScreen({ onNavigateLogin }) {
           <Picker
             selectedValue={selectedUniversity}
             onValueChange={(val) => setSelectedUniversity(val)}
-          >
+            style={{height:60}}
+            itemStyle={{height:50, textAlignVertical: 'center'}}
+          >s
             {universities.map((u) => (
               <Picker.Item key={u.id} label={u.name} value={u.id} />
             ))}
@@ -225,9 +227,11 @@ const styles = StyleSheet.create({
   pickerWrapper: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 10,
-    marginBottom: 20,
-    overflow: 'hidden'
+    borderRadius: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    paddingTop: 10
   },
   termsRow: {
     flexDirection: 'row',

@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker'
 import { Ionicons } from '@expo/vector-icons'
 import { TERMS_TEXT } from '../../lib/terms'
 
+
 function Section({ title, children }) {
   return (
     <View style={styles.section}>
@@ -43,9 +44,46 @@ export default function ProfileScreen() {
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [submittingLocation, setSubmittingLocation] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [profile, setProfile] = useState(null)
+  const [profileEmail, setProfileEmail] = useState('')
+  const [profileName, setProfileName] = useState('')
+  const [showUniversityModal, setShowUniversityModal] = useState(false)
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [updatingPassword, setUpdatingPassword] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const isReady = confirmPassword.length >= 6
 
   async function handleSignOut() {
     await supabase.auth.signOut()
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+  }
+  async function updateUniversity() {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || !selectedUniversity) return
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ university_id: selectedUniversity })
+      .eq('id', user.id)
+
+    if (error) {
+      Alert.alert('Error', error.message)
+      return
+    }
+
+    setShowUniversityModal(false)
+
+    // reload profile so UI updates
+    loadProfile()
   }
 
   useEffect(() => {
@@ -62,6 +100,44 @@ export default function ProfileScreen() {
       }
     }
     loadUniversities()
+  }, [])
+  
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      setProfileEmail(user.email)
+      setProfileName(user.user_metadata?.full_name || '')
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('university_id')
+        .eq('id', user.id)
+        .single()
+
+      setSelectedUniversity(profileData?.university_id)
+
+      let universityName = ''
+
+      if (profileData?.university_id) {
+        const { data: university, error: universityError } = await supabase
+          .from('universities')
+          .select('name')
+          .eq('id', profileData.university_id)
+          .single()
+
+
+        universityName = university?.name || ''
+      }
+
+      setProfile({
+        ...profileData,
+        university_name: universityName
+      })
+    }
+
+    loadProfile()
   }, [])
 
   async function submitIssue() {
@@ -105,6 +181,74 @@ export default function ProfileScreen() {
     setShowIssueModal(false)
     Alert.alert('Thanks!', 'Your issue has been submitted.')
   }
+  async function deleteAccount() {
+    setDeletingAccount(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setDeletingAccount(false)
+      Alert.alert('Error', 'You are not signed in.')
+      return
+    }
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('id', user.id)
+
+    if (error) {
+      setDeletingAccount(false)
+      Alert.alert('Error', error.message)
+      return
+    }
+
+    await supabase.auth.signOut()
+    setDeletingAccount(false)
+  }
+  async function updatePassword() {
+    // Rule check
+    if (
+      newPassword.length < 6 ||
+      !/[a-zA-Z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword)
+    ) {
+      Alert.alert(
+        'Invalid password',
+        'New password must be at least 6 characters and include both letters and numbers.'
+      )
+      return
+    }
+
+    // Match check
+    if (newPassword !== confirmPassword) {
+      Alert.alert(
+        'Passwords do not match',
+        'Please make sure both passwords are the same.'
+      )
+      return
+    }
+
+    setUpdatingPassword(true)
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    })
+
+    setUpdatingPassword(false)
+
+    if (error) {
+      Alert.alert('Error', error.message)
+      return
+    }
+
+    setNewPassword('')
+    setConfirmPassword('')
+    setShowPasswordModal(false)
+
+    Alert.alert('Success', 'Password updated.')
+  }
+
   async function submitLocation() {
     if (!selectedUniversity || !locationName.trim() || !locationAddress.trim() || !websiteUrl.trim()) {
       Alert.alert('Missing fields', 'Please fill out university, location name, address, and Website URL')
@@ -159,10 +303,9 @@ export default function ProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <Section title="Account Details">
-          <Row label="Name" onPress={() => {}} />
-          <Row label="Email" onPress={() => {}} />
-          <Row label="University" onPress={() => {}} />
-          <Row label="Change password" onPress={() => {}} />
+          <Row label="View profile" onPress={() => setShowProfileModal(true)} />
+          <Row label="Change University" onPress={() => setShowUniversityModal(true)} />
+          <Row label="Change Password" onPress={() => setShowPasswordModal(true)} />
         </Section>
 
         <Section title="Contribute">
@@ -175,8 +318,8 @@ export default function ProfileScreen() {
         </Section>
 
         <Section title="Account">
-          <Row label="Sign out" onPress={handleSignOut} />
-          <Row label="Delete account" onPress={() => {}} danger />
+          <Row label="Sign out" onPress={() => setShowSignOutModal(true)} />
+          <Row label="Delete account" onPress={() => setShowDeleteModal(true)} danger />
         </Section>
       </ScrollView>
       <Modal
@@ -342,6 +485,191 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </Modal>
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowDeleteModal(false)} />
+
+        <View style={styles.modalSheet}>
+          <Text style={styles.modalTitle}>Delete Account?</Text>
+
+          <Text style={styles.deleteText}>
+            This will delete your profile data and sign you out. This action cannot be undone.
+          </Text>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => setShowDeleteModal(false)}
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={deleteAccount}
+              disabled={deletingAccount}
+            >
+              <Text style={styles.submitText}>
+                {deletingAccount ? 'Deleting...' : 'Delete'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={showProfileModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowProfileModal(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowProfileModal(false)} />
+
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Profile</Text>
+            <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+              <Ionicons name="close" size={22} color="#999" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.profileInfoRow}>
+            <Text style={styles.profileLabel}>Name</Text>
+            <Text style={styles.profileValue}>
+              {profile?.full_name || profileName || 'Not set'}
+            </Text>
+          </View>
+
+          <View style={styles.profileInfoRow}>
+            <Text style={styles.profileLabel}>Email</Text>
+            <Text style={styles.profileValue}>{profileEmail || 'Not set'}</Text>
+          </View>
+
+          <View style={styles.profileInfoRow}>
+            <Text style={styles.profileLabel}>University</Text>
+            <Text style={styles.profileValue}>
+              {profile?.university_name || 'Not set'}
+            </Text>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={showUniversityModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowUniversityModal(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowUniversityModal(false)} />
+
+        <View style={styles.modalSheet}>
+          <Text style={styles.modalTitle}>Change University</Text>
+
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedUniversity}
+              onValueChange={(val) => setSelectedUniversity(val)}
+              style={{ height: 60 }}
+              itemStyle={{ height: 50 }}
+            >
+              {universities.map((u) => (
+                <Picker.Item key={u.id} label={u.name} value={u.id} />
+              ))}
+            </Picker>
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowUniversityModal(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.submitBtn, { backgroundColor: primaryColor }]}
+              onPress={updateUniversity}
+            >
+              <Text style={styles.submitText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={showSignOutModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSignOutModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowSignOutModal(false)}
+        />
+
+        <View style={styles.modalContainer}>
+          <View style={styles.modalSheet}>
+            <TouchableOpacity
+              style={[styles.signOutBtn, { backgroundColor: primaryColor }]}
+              onPress={handleSignOut}
+            >
+              <Text style={styles.signOutText}>Confirm Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowPasswordModal(false)} />
+
+        <View style={styles.modalContainer}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Change Password</Text>
+              <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+                <Ionicons name="close" size={22} color="#999" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="New password"
+              placeholderTextColor="#999"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm password"
+              placeholderTextColor="#999"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+
+            <TouchableOpacity
+              style={[
+                styles.submitBtn,
+                {
+                   backgroundColor: isReady ? primaryColor : '#ccc' 
+                }
+              ]}
+              onPress={updatePassword}
+              disabled={!newPassword || !confirmPassword}
+            >
+              <Text
+                style={styles.submitText}
+              >
+                Update Password
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -406,6 +734,7 @@ const styles = StyleSheet.create({
 modalSheet: {
   backgroundColor: '#fff',
   padding: 20,
+  paddingBottom: 32,
   borderTopLeftRadius: 22,
   borderTopRightRadius: 22
 },
@@ -436,12 +765,12 @@ issueInput: {
   lineHeight: 20
   },
   cancelBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    alignItems: 'center'
+  flex: 1,
+  paddingVertical: 14,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: '#e0e0e0',
+  alignItems: 'center'
   },
   cancelText: {
     color: '#666',
@@ -458,7 +787,6 @@ issueInput: {
     fontWeight: '600'
   },
   submitBtn: {
-    flex: 1,
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
@@ -516,4 +844,53 @@ issueInput: {
   alignItems: 'center',
   marginBottom: 12
   },
+  deleteText: {
+  fontSize: 14,
+  color: '#555',
+  lineHeight: 20,
+  marginBottom: 16
+  },
+  deleteBtn: {
+  flex: 1,
+  paddingVertical: 14,
+  borderRadius: 12,
+  backgroundColor: '#C94040',
+  alignItems: 'center'
+  },
+  profileInfoRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
+  },
+  profileLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    fontWeight: '600'
+  },
+  profileValue: {
+    fontSize: 15,
+    color: '#1a1a1a',
+    fontWeight: '500'
+  },
+  signOutModal: {
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center'
+  },
+  signOutBtn: {
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  signOutText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15
+  }
 })
