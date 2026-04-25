@@ -54,7 +54,13 @@ function ActionButton({ icon, label, color, onPress }) {
   )
 }
 
-export default function LocationDetailSheet({ location, visible, onClose }) {
+export default function LocationDetailSheet({
+    location,
+    visible,
+    onClose,
+    isFavorite = false,
+    onToggleFavorite
+  }) {
   const [busyness, setBusyness] = useState(null)
   const { primaryColor } = useTheme()
 
@@ -131,7 +137,20 @@ export default function LocationDetailSheet({ location, visible, onClose }) {
             primaryColor={primaryColor}
             />
           {/* Name & type */}
-          <Text style={styles.name}>{location.name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{location.name}</Text>
+
+            <TouchableOpacity
+              style={styles.detailHeartBtn}
+              onPress={() => onToggleFavorite?.(location.id)}
+            >
+              <Ionicons
+                name={isFavorite ? 'heart' : 'heart-outline'}
+                size={24}
+                color={isFavorite ? '#E53935' : '#aaa'}
+              />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.type}>
             {location.type === 'study' ? '📚 Study spot' :
              location.type === 'food' ? '🍔 Food spot' : '📚🍔 Study & Food'}
@@ -247,7 +266,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 4,
-    paddingRight: 32
+    flex: 1
   },
   type: {
     fontSize: 13,
@@ -342,5 +361,14 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12
+    },
+    detailHeartBtn: {
+      padding: 6
     }
 })

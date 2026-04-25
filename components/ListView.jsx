@@ -16,11 +16,54 @@ export default function ListView({
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const { primaryColor } = useTheme()
+  const [favoriteIds, setFavoriteIds] = useState([])
+
 
   useEffect(() => {
     fetchLocations()
   }, [typeFilter])
 
+  useEffect(() => {
+    fetchFavorites()
+  }, [])
+
+  async function fetchFavorites() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('favorites')
+      .select('location_id')
+      .eq('user_id', user.id)
+
+    setFavoriteIds(data?.map(f => f.location_id) || [])
+  }
+
+  async function toggleFavorite(locationId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const isFav = favoriteIds.includes(locationId)
+
+    if (isFav) {
+      await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('location_id', locationId)
+
+      setFavoriteIds(prev => prev.filter(id => id !== locationId))
+    } else {
+      await supabase
+        .from('favorites')
+        .insert({
+          user_id: user.id,
+          location_id: locationId
+        })
+
+      setFavoriteIds(prev => [...prev, locationId])
+    }
+  }
   async function fetchLocations() {
     setLoading(true)
     let query = supabase
@@ -60,7 +103,12 @@ export default function ListView({
   return (
     <ScrollView contentContainerStyle={styles.list}>
       {searched.map((loc) => (
-        <LocationCard key={loc.id} location={loc} />
+        <LocationCard
+          key={loc.id}
+          location={loc}
+          isFavorite={favoriteIds.includes(loc.id)}
+          onToggleFavorite={toggleFavorite}
+        />
       ))}
     </ScrollView>
   )

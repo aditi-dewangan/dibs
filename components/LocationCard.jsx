@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { supabase } from '../lib/supabase'
 import BusynessBar from './BusynessBar'
 import LocationDetailSheet from './LocationDetailSheet'
+import { Ionicons } from '@expo/vector-icons'
 
 function Tag({ label }) {
   return (
@@ -12,7 +13,7 @@ function Tag({ label }) {
   )
 }
 
-export default function LocationCard({ location }) {
+export default function LocationCard({ location, isFavorite = false, onToggleFavorite }){
   const [busyness, setBusyness] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
 
@@ -35,15 +36,29 @@ export default function LocationCard({ location }) {
         onPress={() => setShowDetail(true)}
         activeOpacity={0.85}
       >
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.cardName}>{location.name}</Text>
-            <Text style={styles.cardType}>
-              {location.type === 'study' ? '📚 Study spot' :
-               location.type === 'food' ? '🍔 Food spot' : '📚🍔 Study & Food'}
-            </Text>
-          </View>
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <Text style={styles.cardName}>{location.name}</Text>
+          <Text style={styles.cardType}>
+            {location.type === 'study' ? '📚 Study spot' :
+            location.type === 'food' ? '🍔 Food spot' : '📚🍔 Study & Food'}
+          </Text>
         </View>
+
+        <TouchableOpacity
+          style={styles.heartBtn}
+          onPress={(e) => {
+            e.stopPropagation()
+            onToggleFavorite?.(location.id)
+          }}
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={24}
+            color={isFavorite ? '#E53935' : '#aaa'}
+          />
+        </TouchableOpacity>
+      </View>
 
         <BusynessBar
           score={busyness?.score ?? 0}
@@ -63,6 +78,8 @@ export default function LocationCard({ location }) {
         location={location}
         visible={showDetail}
         onClose={() => setShowDetail(false)}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
       />
     </>
   )
@@ -97,5 +114,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4
   },
-  tagText: { fontSize: 11, color: '#666' }
+  tagText: { fontSize: 11, color: '#666' },
+  heartBtn: {
+    padding: 4
+  }
 })
