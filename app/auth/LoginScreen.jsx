@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../lib/ThemeContext'
+import DibsLogo from '../../components/DibsLogo'
 
 export default function LoginScreen({ onNavigateSignup }) {
   const [email, setEmail] = useState('')
@@ -29,7 +30,11 @@ export default function LoginScreen({ onNavigateSignup }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Text style={styles.title}>Welcome back</Text>
+      <Text style={styles.title}>Welcome back to</Text>
+      <View style={styles.logoRow}>
+                <DibsLogo size={40} color={primaryColor} fill="#fff" />
+        <Text style={[styles.appName, { color: primaryColor }]}>ibs</Text>
+      </View>
       <Text style={styles.subtitle}>Sign in to your account</Text>
 
       <TextInput
@@ -122,5 +127,16 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
+  },
+    logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: -2
+  },
+  appName: {
+    fontSize: 36,
+    fontFamily: 'Nunito_700Bold',
+    lineHeight: 55,
+    marginLeft: -4
   }
 })

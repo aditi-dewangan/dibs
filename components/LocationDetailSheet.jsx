@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import MapView, { Marker } from 'react-native-maps'
 import { useTheme } from '../lib/ThemeContext'
+import * as Location from 'expo-location'
 
 function Tag({ label }) {
   return (
@@ -64,6 +65,23 @@ export default function LocationDetailSheet({
   const [busyness, setBusyness] = useState(null)
   const { primaryColor } = useTheme()
 
+  const [userCoords, setUserCoords] = useState(null)
+  const [accurateAnswer, setAccurateAnswer] = useState(null)
+  const [busynessRating, setBusynessRating] = useState(null)
+  const [surveyCooldown, setSurveyCooldown] = useState(false)
+
+  useEffect(() => {
+    async function getLocation() {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return
+
+      const pos = await Location.getCurrentPositionAsync({})
+      setUserCoords(pos.coords)
+    }
+
+    if (visible) getLocation()
+  }, [visible])
+
   useEffect(() => {
     if (location) fetchBusyness()
   }, [location])
@@ -72,6 +90,67 @@ export default function LocationDetailSheet({
     const { data } = await supabase
       .rpc('get_busyness', { p_location_id: location.id })
     if (data) setBusyness(data)
+  }
+
+  function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000
+
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+    return R * c
+  }
+
+  const distanceMeters =
+    userCoords && location
+      ? getDistanceMeters(
+          userCoords.latitude,
+          userCoords.longitude,
+          location.lat,
+          location.lng
+        )
+      : null
+
+  const canSubmitSurvey =
+    distanceMeters !== null && distanceMeters <= 100
+    
+  async function submitSurvey(nextAccurate, nextRating) {
+    if (!canSubmitSurvey || surveyCooldown) return
+    if (nextAccurate === null || nextRating === null) return
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { error } = await supabase
+      .from('busyness_surveys')
+      .insert({
+        user_id: user.id,
+        location_id: location.id,
+        accurate: nextAccurate,
+        busyness_rating: nextRating
+      })
+
+    if (error) {
+      console.log('SURVEY ERROR:', error)
+      return
+    }
+
+    setAccurateAnswer(null)
+    setBusynessRating(null)
+    setSurveyCooldown(true)
+
+    setTimeout(() => {
+      setSurveyCooldown(false)
+    }, 15 * 60 * 1000)
   }
 
   function openDirections() {
@@ -173,6 +252,87 @@ export default function LocationDetailSheet({
             score={busyness?.score ?? 0}
             label={busyness?.label ?? 'no_data'}
           />
+
+          <View style={styles.surveyBox}>
+          {!canSubmitSurvey && (
+            <Text style={styles.surveyWarning}>
+              Must be within 100 meters of {location.name} to submit survey.
+            </Text>
+          )}
+
+          {surveyCooldown && (
+            <Text style={styles.surveyCooldown}>
+              Next survey can be answered in 15 minutes.
+            </Text>
+          )}
+
+          <View style={styles.surveyRow}>
+            <Text style={styles.surveyQuestion}>Is this info accurate?</Text>
+
+            {['Yes', 'No'].map((label) => {
+              const value = label === 'Yes'
+              const active = accurateAnswer === value
+
+              return (
+                <TouchableOpacity
+                  key={label}
+                  disabled={!canSubmitSurvey || surveyCooldown}
+                  style={[
+                    styles.surveyOption,
+                    !canSubmitSurvey && styles.surveyOptionDisabled,
+                    active && { backgroundColor: primaryColor }
+                  ]}
+                  onPress={() => {
+                    setAccurateAnswer(value)
+                    submitSurvey(value, busynessRating)
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.surveyOptionText,
+                      active && { color: '#fff' }
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+
+  <View style={styles.surveyRow}>
+      <Text style={styles.surveyQuestion}>Rate busyness:</Text>
+
+      {[1, 2, 3, 4, 5].map((num) => {
+        const active = busynessRating === num
+
+        return (
+          <TouchableOpacity
+            key={num}
+            disabled={!canSubmitSurvey || surveyCooldown}
+            style={[
+              styles.ratingCircle,
+              !canSubmitSurvey && styles.surveyOptionDisabled,
+              active && { backgroundColor: primaryColor }
+            ]}
+            onPress={() => {
+              setBusynessRating(num)
+              submitSurvey(accurateAnswer, num)
+            }}
+          >
+            <Text
+              style={[
+                styles.ratingText,
+                active && { color: '#fff' }
+              ]}
+            >
+              {num}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </View>
+  </View>
 
           {/* Divider */}
           <View style={styles.divider} />
@@ -370,5 +530,60 @@ const styles = StyleSheet.create({
     },
     detailHeartBtn: {
       padding: 6
-    }
+    },
+    surveyBox: {
+  marginTop: 12
+  },
+  surveyWarning: {
+    fontSize: 12,
+    color: '#C94040',
+    marginBottom: 8,
+    fontFamily: 'Nunito_600SemiBold'
+  },
+  surveyCooldown: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+    fontFamily: 'Nunito_600SemiBold'
+  },
+  surveyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8
+  },
+  surveyQuestion: {
+    flex: 1,
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'Nunito_600SemiBold'
+  },
+  surveyOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: '#e0e0e0'
+  },
+  surveyOptionDisabled: {
+    backgroundColor: '#f0f0f0',
+    opacity: 0.6
+  },
+  surveyOptionText: {
+    fontSize: 12,
+    color: '#555',
+    fontFamily: 'Nunito_700Bold'
+  },
+  ratingCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#e0e0e0',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#555',
+    fontFamily: 'Nunito_700Bold'
+  }
 })
