@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: 'Inter_600SemiBold',
     color: '#1a1a1a',
     marginBottom: 4,
     flex: 1
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     color: '#aaa',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     color: '#555',
-    fontWeight: '500'
+    fontFamily: 'Nunito_500Regular'
   },
   actions: {
     flexDirection: 'row',
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: 14,
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   busynessDetail: {
     fontSize: 11,

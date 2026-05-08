@@ -4,8 +4,10 @@ import { supabase } from '../../lib/supabase'
 import LoginScreen from './LoginScreen'
 import SignupScreen from './SignupScreen'
 import MainTabs from '../tabs/MainTabs'
+import { useTheme } from '../../lib/ThemeContext'
 
 export default function AuthGate() {
+  const { primaryColor } = useTheme()
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showSignup, setShowSignup] = useState(false)
@@ -26,7 +28,7 @@ export default function AuthGate() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#3B9E6B" />
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     )
   }

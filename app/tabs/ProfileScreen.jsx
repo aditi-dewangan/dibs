@@ -5,7 +5,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput,
 import { useState, useEffect } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { Ionicons } from '@expo/vector-icons'
-import { TERMS_TEXT } from '../../lib/terms'
+import PrivacyPolicy from '../../lib/terms'
 
 
 function Section({ title, children }) {
@@ -296,11 +296,12 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: primaryColor }]}>
       <View style={[styles.header, { backgroundColor: primaryColor }]}>
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
+      <View style={styles.contentArea}>
       <ScrollView contentContainerStyle={styles.content}>
         <Section title="Account Details">
           <Row label="View profile" onPress={() => setShowProfileModal(true)} />
@@ -463,7 +464,7 @@ export default function ProfileScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowTerms(false)} />
 
-        <View style={styles.modalSheet}>
+        <View style={styles.modalSheetTall}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Terms & Conditions</Text>
             <TouchableOpacity onPress={() => setShowTerms(false)}>
@@ -471,10 +472,8 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ maxHeight: 300 }}>
-            <Text style={styles.termsText}>
-              {TERMS_TEXT}
-            </Text>
+          <ScrollView style={styles.termsScroll} showsVerticalScrollIndicator={false}>
+              <PrivacyPolicy/>
           </ScrollView>
 
           <TouchableOpacity
@@ -605,15 +604,13 @@ export default function ProfileScreen() {
           onPress={() => setShowSignOutModal(false)}
         />
 
-        <View style={styles.modalContainer}>
-          <View style={styles.modalSheet}>
-            <TouchableOpacity
-              style={[styles.signOutBtn, { backgroundColor: primaryColor }]}
-              onPress={handleSignOut}
-            >
-              <Text style={styles.signOutText}>Confirm Sign Out</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={[styles.modalSheet, { borderRadius: 16, padding: 16 }]}> 
+          <TouchableOpacity
+            style={[styles.signOutBtn, { backgroundColor: primaryColor }]}
+            onPress={handleSignOut}
+          >
+            <Text style={styles.signOutText}>Confirm Sign Out</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
       <Modal
@@ -624,58 +621,60 @@ export default function ProfileScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowPasswordModal(false)} />
 
-        <View style={styles.modalContainer}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Change Password</Text>
-              <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
-                <Ionicons name="close" size={22} color="#999" />
-              </TouchableOpacity>
-            </View>
-
-            <TextInput
-              style={styles.input}
-              placeholder="New password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.submitBtn,
-                {
-                   backgroundColor: isReady ? primaryColor : '#ccc' 
-                }
-              ]}
-              onPress={updatePassword}
-              disabled={!newPassword || !confirmPassword}
-            >
-              <Text
-                style={styles.submitText}
-              >
-                Update Password
-              </Text>
+        <View style={[styles.modalSheet, { borderRadius: 16 }]}> 
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+              <Ionicons name="close" size={22} color="#999" />
             </TouchableOpacity>
           </View>
+
+          <TextInput
+            style={styles.input}
+            placeholder="New password"
+            placeholderTextColor="#999"
+            secureTextEntry
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm password"
+            placeholderTextColor="#999"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.submitBtn,
+              {
+                 backgroundColor: isReady ? primaryColor : '#ccc' 
+              }
+            ]}
+            onPress={updatePassword}
+            disabled={!newPassword || !confirmPassword}
+          >
+            <Text
+              style={styles.submitText}
+            >
+              Update Password
+            </Text>
+          </TouchableOpacity>
         </View>
       </Modal>
+      </View>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1
+  },
+  contentArea: {
     flex: 1,
     backgroundColor: '#fff'
   },
@@ -684,11 +683,11 @@ const styles = StyleSheet.create({
   alignItems: 'center',
   justifyContent: 'space-between',
   paddingHorizontal: 20,
-  paddingVertical: 12,
+  paddingVertical: 8,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 30,
+    fontFamily: 'Nunito_700Bold',
     color: '#fff'
   },
   content: {
@@ -700,7 +699,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     color: '#999',
     marginBottom: 8,
     textTransform: 'uppercase'
@@ -728,19 +727,37 @@ const styles = StyleSheet.create({
     color: '#ccc'
   },
   modalBackdrop: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.3)'
-},
-modalSheet: {
-  backgroundColor: '#fff',
-  padding: 20,
-  paddingBottom: 32,
-  borderTopLeftRadius: 22,
-  borderTopRightRadius: 22
-},
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)'
+  },
+  // Default modal sheet — size to content up to a max height so compact modals
+  // don't take the full screen. Use this for issue, location, profile, delete, password, etc.
+  modalSheet: {
+    backgroundColor: '#fff',
+    padding: 20,
+    paddingBottom: 32,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    // allow the sheet to wrap content but prevent it from exceeding most of the screen
+    maxHeight: '75%'
+  },
+  // Tall modal sheet specifically for Terms & Conditions
+  modalSheetTall: {
+    backgroundColor: '#fff',
+    padding: 20,
+    paddingBottom: 32,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    height: '60%'
+  },
+  // Container used to center small action-only modals (like sign out) vertically
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end'
+  },
 modalTitle: {
   fontSize: 18,
-  fontWeight: '700',
+  fontFamily: 'Nunito_700Bold',
   color: '#1a1a1a',
   marginBottom: 12
 },
@@ -753,8 +770,9 @@ issueInput: {
   fontSize: 15,
   color: '#1a1a1a',
   textAlignVertical: 'top',
-  marginBottom: 16
+  marginBottom: 10
   },
+
   modalActions: {
     flexDirection: 'row',
     gap: 10
@@ -763,6 +781,9 @@ issueInput: {
   fontSize: 14,
   color: '#444',
   lineHeight: 20
+  },
+  termsScroll: {
+    flex: 1
   },
   cancelBtn: {
   flex: 1,
@@ -774,7 +795,7 @@ issueInput: {
   },
   cancelText: {
     color: '#666',
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   closeTermsBtn: {
     marginTop: 16,
@@ -784,7 +805,7 @@ issueInput: {
   },
   closeTermsText: {
     color: '#fff',
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   submitBtn: {
     padding: 14,
@@ -795,11 +816,11 @@ issueInput: {
   },
   submitText: {
     color: '#fff',
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   inputLabel: {
   fontSize: 13,
-  fontWeight: '600',
+  fontFamily: 'Nunito_600SemiBold',
   color: '#666',
   marginBottom: 6
   },
@@ -836,7 +857,7 @@ issueInput: {
   typeText: {
     fontSize: 14,
     color: '#666',
-    fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   modalHeader: {
   flexDirection: 'row',
@@ -867,12 +888,12 @@ issueInput: {
     color: '#999',
     marginBottom: 4,
     textTransform: 'uppercase',
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   profileValue: {
     fontSize: 15,
     color: '#1a1a1a',
-    fontWeight: '500'
+    fontFamily: 'Nunito_500Regular'
   },
   signOutModal: {
     left: 20,
@@ -890,7 +911,7 @@ issueInput: {
   },
   signOutText: {
     color: '#fff',
-    fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 15
   }
 })

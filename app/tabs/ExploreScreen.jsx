@@ -5,8 +5,8 @@ import ListView from '../../components/ListView'
 import MapView2 from '../../components/MapView2'
 import FilterModal from '../../components/FilterModal'
 import { useTheme } from '../../lib/ThemeContext'
+import DibsLogo from '../../components/DibsLogo'
 import {View, Text, TouchableOpacity, StyleSheet, TextInput} from 'react-native'
-
 
 const ATTRIBUTE_MATCH = {
   wifi:     (a) => a.wifi === true,
@@ -39,19 +39,29 @@ export default function ExploreScreen() {
   const activeFilterCount = (typeFilter !== 'all' ? 1 : 0) + activeAttrs.length
 
   return (
-    <SafeAreaView style={styles.container}>
-
+    <SafeAreaView style={[styles.container, { backgroundColor: primaryColor }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: primaryColor }]}>
-        <Text style={styles.appName}>Dibs</Text>
+        <View style={styles.logoRow}>
+          <DibsLogo size={32} color="#fff" fill={primaryColor} />
+          <Text style={styles.appName}>ibs</Text>
+        </View>
+
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={[styles.filterBtn, hasFilters && styles.filterBtnActive]}
             onPress={() => setShowFilter(true)}
           >
-            <Ionicons name="options-outline" size={16} color={hasFilters ? primaryColor : '#fff'} />
+            <Ionicons
+              name="options-outline"
+              size={16}
+              color={hasFilters ? primaryColor : '#fff'}
+            />
+
             {activeFilterCount > 0 && (
-              <Text style={[styles.filterCount, { color: primaryColor }]}>{activeFilterCount}</Text>
+              <Text style={[styles.filterCount, { color: primaryColor }]}>
+                {activeFilterCount}
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -64,6 +74,7 @@ export default function ExploreScreen() {
                 List
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.toggleBtn, activeView === 'map' && styles.toggleActive]}
               onPress={() => setActiveView('map')}
@@ -75,29 +86,37 @@ export default function ExploreScreen() {
           </View>
         </View>
       </View>
-      {activeView === 'list' && (
-        <View style={styles.searchWrapper}>
-          <Ionicons name="search-outline" size={16} color="#999" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search spots..."
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      )}
 
-      {/* Content */}
-      {activeView === 'list'
-        ? <ListView
+      {/* Content area */}
+      <View style={styles.contentArea}>
+        {activeView === 'list' && (
+          <View style={styles.searchWrapper}>
+            <Ionicons name="search-outline" size={16} color="#999" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search spots..."
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        )}
+
+        {activeView === 'list' ? (
+          <ListView
             typeFilter={typeFilter}
             activeAttrs={activeAttrs}
             attrMatch={ATTRIBUTE_MATCH}
             searchQuery={searchQuery}
           />
-        : <MapView2 />
-      }
+        ) : (
+          <MapView2
+            typeFilter={typeFilter}
+            activeAttrs={activeAttrs}
+            attrMatch={ATTRIBUTE_MATCH}
+          />
+        )}
+      </View>
 
       {/* Filter Modal */}
       <FilterModal
@@ -109,7 +128,6 @@ export default function ExploreScreen() {
         toggleAttr={toggleAttr}
         onClear={clearFilters}
       />
-
     </SafeAreaView>
   )
 }
@@ -117,16 +135,33 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: 20,
-  paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
   appName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#fff'
+    fontSize: 30,
+    fontFamily: 'Nunito_700Bold',
+    color: '#fff',
+    lineHeight: 40,
+    marginLeft: -4
+  },
+  contentArea: {
+    flex: 1,
+    backgroundColor: '#fff'
+  },
+  tabBarStyle: {
+    height: 82,
+    paddingBottom: 4,
+    paddingTop: 10,
+    borderTopWidth: 0
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: -2
   },
   headerRight: {
     flexDirection: 'row',
@@ -147,7 +182,7 @@ const styles = StyleSheet.create({
   },
   filterCount: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   toggle: {
     flexDirection: 'row',
@@ -166,22 +201,22 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.7)',
-    fontWeight: '500'
+    fontFamily: 'Nunito_500Regular'
   },
   toggleTextActive: {
-    fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     color: '#1a1a1a'
   },
   searchWrapper: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-  marginHorizontal: 16,
-  marginVertical: 12,
-  paddingHorizontal: 14,
-  paddingVertical: 10,
-  borderRadius: 14,
-  backgroundColor: '#f2f2f2'
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: '#f2f2f2'
   },
   searchInput: {
     flex: 1,

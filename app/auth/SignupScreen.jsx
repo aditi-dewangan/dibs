@@ -8,7 +8,7 @@ import { Picker } from '@react-native-picker/picker'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../lib/ThemeContext'
-import { TERMS_TEXT } from '../../lib/terms'
+import PrivacyPolicy from '../../lib/terms'
 
 export default function SignupScreen({ onNavigateLogin }) {
   const [email, setEmail] = useState('')
@@ -123,7 +123,7 @@ export default function SignupScreen({ onNavigateLogin }) {
             onValueChange={(val) => setSelectedUniversity(val)}
             style={{height:60}}
             itemStyle={{height:50, textAlignVertical: 'center'}}
-          >s
+          >
             {universities.map((u) => (
               <Picker.Item key={u.id} label={u.name} value={u.id} />
             ))}
@@ -134,12 +134,12 @@ export default function SignupScreen({ onNavigateLogin }) {
           style={styles.termsRow}
           onPress={() => setAcceptedTerms(!acceptedTerms)}
         >
-          <View style={[styles.checkbox, acceptedTerms && styles.checkboxActive]}>
+          <View style={[styles.checkbox, acceptedTerms && styles.checkboxActive, { backgroundColor: primaryColor, borderColor: primaryColor }]}>
             {acceptedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
           </View>
           <Text style={styles.termsText}>
             I agree to the{' '}
-            <Text style={{ color: '#3B9E6B' }} onPress={() => setShowTerms(true)}>
+            <Text style={{ color: primaryColor }} onPress={() => setShowTerms(true)}>
               Terms & Conditions
             </Text>
           </Text>
@@ -148,7 +148,8 @@ export default function SignupScreen({ onNavigateLogin }) {
         <TouchableOpacity
           style={[
             styles.button,
-            (loading || !acceptedTerms) && styles.buttonDisabled
+            (loading || !acceptedTerms) && styles.buttonDisabled,
+            { backgroundColor: primaryColor }
           ]}
           onPress={handleSignup}
           disabled={loading || !acceptedTerms}
@@ -159,7 +160,9 @@ export default function SignupScreen({ onNavigateLogin }) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onNavigateLogin} style={styles.link}>
-          <Text style={styles.linkText}>Already have an account? Sign in</Text>
+          <Text style={[styles.linkText, { color: primaryColor }]}>
+            Already have an account? Sign in
+          </Text>
         </TouchableOpacity>
         <Modal
           visible={showTerms}
@@ -173,13 +176,11 @@ export default function SignupScreen({ onNavigateLogin }) {
             <Text style={styles.modalTitle}>Terms & Conditions</Text>
 
             <ScrollView style={{ maxHeight: 300 }}>
-              <Text style={styles.termsBody}>
-                {TERMS_TEXT}
-              </Text>
+                <PrivacyPolicy/>
             </ScrollView>
 
             <TouchableOpacity
-              style={styles.closeTermsBtn}
+              style={[styles.closeTermsBtn, { backgroundColor: primaryColor }]}
               onPress={() => setShowTerms(false)}
             >
               <Text style={styles.closeTermsText}>Close</Text>
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#1a1a1a',
     marginBottom: 6
   },
@@ -248,17 +249,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  checkboxActive: {
-    backgroundColor: '#3B9E6B',
-    borderColor: '#3B9E6B'
-  },
   termsText: {
     flex: 1,
     fontSize: 13,
     color: '#555'
   },
   button: {
-    backgroundColor: '#3B9E6B',
     borderRadius: 10,
     padding: 16,
     alignItems: 'center',
@@ -270,14 +266,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   link: {
     marginTop: 20,
     alignItems: 'center'
   },
   linkText: {
-    color: '#3B9E6B',
     fontSize: 14
   },
   modalBackdrop: {
@@ -292,7 +287,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     marginBottom: 12
   },
   termsBody: {
@@ -302,13 +297,12 @@ const styles = StyleSheet.create({
   },
   closeTermsBtn: {
     marginTop: 16,
-    backgroundColor: '#3B9E6B',
     padding: 14,
     borderRadius: 12,
     alignItems: 'center'
   },
   closeTermsText: {
     color: '#fff',
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   }
 })

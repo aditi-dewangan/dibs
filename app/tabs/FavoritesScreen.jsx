@@ -10,6 +10,7 @@ import LocationCard from '../../components/LocationCard'
 import { useTheme } from '../../lib/ThemeContext'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
+import { View, Text } from 'react-native'
 
 export default function FavoritesScreen() {
   const [locations, setLocations] = useState([])
@@ -86,22 +87,45 @@ export default function FavoritesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.list}>
-        {locations.map((loc) => (
-          <LocationCard
-            key={loc.id}
-            location={loc}
-            isFavorite={true}
-            onToggleFavorite={toggleFavorite}
-          />
-        ))}
-      </ScrollView>
-    </SafeAreaView>
-  )
+    <SafeAreaView style={[styles.container, { backgroundColor: primaryColor }]}>
+      <View style={[styles.header, { backgroundColor: primaryColor }]}>
+          <Text style={styles.headerTitle}>Favorites</Text>
+      </View>
+      <View style={styles.contentArea}>
+        <ScrollView contentContainerStyle={styles.list}>
+          {locations.map((loc) => (
+            <LocationCard
+              key={loc.id}
+              location={loc}
+              isFavorite={true}
+              onToggleFavorite={toggleFavorite}
+            />
+          ))}
+        </ScrollView>
+      </View>
+      </SafeAreaView>
+    )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  list: { padding: 16 }
+  container: {
+    flex: 1
+  },
+  contentArea: {
+    flex: 1,
+    backgroundColor: '#fff'
+  },
+  list: { padding: 16 },
+  header: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 20,
+  paddingVertical: 8,
+  },
+  headerTitle: {
+    fontSize: 30,
+    fontFamily: 'Nunito_700Bold',
+    color: '#fff'
+  }
 })

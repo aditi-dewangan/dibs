@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, use } from 'react'
 import {
   View, Text, StyleSheet, ActivityIndicator,
   TouchableOpacity
@@ -40,7 +40,11 @@ function Tag({ label }) {
   )
 }
 
-export default function MapView2() {
+export default function MapView2({
+  typeFilter = 'all',
+  activeAttrs = [],
+  attrMatch = {}
+  }) {
   const [locations, setLocations] = useState([])
   const [busynessMap, setBusynessMap] = useState({})
   const [selectedLocation, setSelectedLocation] = useState(null)
@@ -49,7 +53,7 @@ export default function MapView2() {
   const mapRef = useRef(null)
   const slideAnim = useRef(new Animated.Value(0)).current
   const { primaryColor, secondaryColor } = useTheme()
-
+  const [favoriteIds, setFavoriteIds] = useState([])
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy < -10,
@@ -88,6 +92,42 @@ export default function MapView2() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    fetchFavorites()
+  }, [])
+
+  async function fetchFavorites() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data: favs, error } = await supabase
+      .from('favorites')
+      .select('location_id')
+      .eq('user_id', user.id)
+    
+    setFavoriteIds(favs?.map(f => f.location_id) || [])
+  }
+
+  async function toggleFavorite(locationId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const isFav = favoriteIds.includes(locationId)
+    if (isFav) {
+      await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('location_id', locationId)
+      setFavoriteIds(prev => prev.filter(id => id !== locationId))
+    } else {
+      await supabase
+        .from('favorites')
+        .insert({ user_id: user.id, location_id: locationId })
+      setFavoriteIds(prev => [...prev, locationId])
+    }
+  }
+
   async function fetchAllBusyness(locs) {
     const results = {}
     await Promise.all(
@@ -119,6 +159,21 @@ export default function MapView2() {
     )
   }
 
+  const filteredLocations = locations.filter((loc) => {
+    const matchesType =
+      typeFilter === 'all' ||
+      loc.type === typeFilter ||
+      loc.type === 'both'
+
+    const matchesAttrs =
+      activeAttrs.length === 0 ||
+      activeAttrs.every(key =>
+        attrMatch[key]?.(loc.attributes || {})
+      )
+
+    return matchesType && matchesAttrs
+  })
+
   const busyness = selectedLocation ? busynessMap[selectedLocation.id] : null
 
   return (
@@ -130,7 +185,7 @@ export default function MapView2() {
         showsUserLocation
         showsMyLocationButton
       >
-        {locations.map((loc) => {
+        {filteredLocations.map((loc) => {
           const b = busynessMap[loc.id]
           const pinColor = getPinColor(b?.label)
           return (
@@ -172,8 +227,7 @@ export default function MapView2() {
       {selectedLocation && (
         <Animated.View
           style={[
-            styles.bottomCard,
-            { transform: [{ translateY: slideAnim }] }
+            styles.bottomCard
           ]}
         >
           {/* Handle area — swipe up to open full details */}
@@ -226,18 +280,20 @@ export default function MapView2() {
         location={selectedLocation}
         visible={showDetail}
         onClose={() => setShowDetail(false)}
+        isFavorite={selectedLocation ? favoriteIds.includes(selectedLocation.id) : false}
+        onToggleFavorite={toggleFavorite}
       />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, marginBottom: -90},
   loadingContainer: {
     flex: 1, justifyContent: 'center', alignItems: 'center'
   },
   map: {
-    flex: 1
+    ...StyleSheet.absoluteFillObject
   },
   pin: {
     width: 36,
@@ -274,7 +330,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    paddingBottom: 36,
+    paddingBottom: 70,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.08,
@@ -296,7 +352,7 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#1a1a1a',
     marginBottom: 2
   },
@@ -338,6 +394,6 @@ const styles = StyleSheet.create({
   },
   moreInfoText: {
     fontSize: 14,
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   }
 })

@@ -4,11 +4,13 @@ import {
   StyleSheet, Alert, KeyboardAvoidingView, Platform
 } from 'react-native'
 import { supabase } from '../../lib/supabase'
+import { useTheme } from '../../lib/ThemeContext'
 
 export default function LoginScreen({ onNavigateSignup }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const { primaryColor } = useTheme()
 
   async function handleLogin() {
     if (!email || !password) {
@@ -50,7 +52,7 @@ export default function LoginScreen({ onNavigateSignup }) {
       />
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        style={[styles.button, loading && styles.buttonDisabled, { backgroundColor: primaryColor }]}
         onPress={handleLogin}
         disabled={loading}
       >
@@ -60,7 +62,14 @@ export default function LoginScreen({ onNavigateSignup }) {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={onNavigateSignup} style={styles.link}>
-        <Text style={styles.linkText}>Don't have an account? Sign up</Text>
+        <Text 
+          style={[
+            styles.linkText,
+            { color: primaryColor }
+          ]}
+        > 
+          Don't have an account? Sign up
+        </Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   )
@@ -75,7 +84,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#1a1a1a',
     marginBottom: 6
   },
@@ -94,7 +103,6 @@ const styles = StyleSheet.create({
     color: '#1a1a1a'
   },
   button: {
-    backgroundColor: '#3B9E6B',
     borderRadius: 10,
     padding: 16,
     alignItems: 'center',
@@ -106,14 +114,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600'
+    fontFamily: 'Nunito_600SemiBold'
   },
   link: {
     marginTop: 20,
     alignItems: 'center'
   },
   linkText: {
-    color: '#3B9E6B',
-    fontSize: 14
+    fontSize: 14,
   }
 })

@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
   sectionLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     color: '#999',
     textTransform: 'uppercase',
     letterSpacing: 0.5,

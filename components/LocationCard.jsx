@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 12
   },
-  cardName: { fontSize: 16, fontWeight: '600', color: '#1a1a1a', marginBottom: 2 },
+  cardName: { fontSize: 16, fontFamily: 'Nunito_700SemiBold', color: '#1a1a1a', marginBottom: 2 },
   cardType: { fontSize: 12, color: '#999' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   tag: {
