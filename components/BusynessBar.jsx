@@ -18,7 +18,7 @@ function getLabel(label) {
     case 'not_busy': return 'Not busy'
     case 'somewhat_busy': return 'Somewhat busy'
     case 'very_busy': return 'Very busy'
-    default: return 'No data'
+    default: return 'No data or Closed'
   }
 }
 

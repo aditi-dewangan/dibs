@@ -19,7 +19,7 @@ export default function LocationCard({ location, isFavorite = false, onToggleFav
 
   useEffect(() => {
     fetchBusyness()
-  }, [])
+  }, [location.id])
 
   async function fetchBusyness() {
     const { data } = await supabase

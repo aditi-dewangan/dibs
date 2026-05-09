@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase'
 import MapView, { Marker } from 'react-native-maps'
 import { useTheme } from '../lib/ThemeContext'
 import * as Location from 'expo-location'
+import { SURVEY_COOLDOWN_MINUTES } from './config'
 
 function Tag({ label }) {
   return (
@@ -84,7 +85,7 @@ export default function LocationDetailSheet({
 
   useEffect(() => {
     if (location) fetchBusyness()
-  }, [location])
+  }, [location?.id])
 
   async function fetchBusyness() {
     const { data } = await supabase
@@ -150,7 +151,7 @@ export default function LocationDetailSheet({
 
     setTimeout(() => {
       setSurveyCooldown(false)
-    }, 15 * 60 * 1000)
+    }, SURVEY_COOLDOWN_MINUTES * 60 * 1000)
   }
 
   function openDirections() {
